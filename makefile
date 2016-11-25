@@ -1,12 +1,12 @@
 basla: derle calistir
 
 derle:
-	gcc harici.c -o harici
-	gcc pro1.c -o pro1
+	gcc read.c -o "read"
+	gcc write.c -o "write"
 
 calistir:
-	./pro1
+	"./write"
 
 temizle:
-	rm -f harici
-	rm -f pro1
+	rm -f "read"
+	rm -f "write"
