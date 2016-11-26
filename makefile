@@ -8,5 +8,5 @@ calistir:
 	"./write"
 
 temizle:
-	rm -f "read"
 	rm -f "write"
+	rm -f "read"

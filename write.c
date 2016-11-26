@@ -14,56 +14,45 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 
-int main(int argc, char **argv) {
-    printf("Uretici islem baslatildi.\n");
+int main() {
+    key_t shm_key = 6166529;
+    const int shm_size = 1024;
 
-    pid_t pid;
-    pid = fork(); /* İşlem çatallanır. */
-    if (pid == 0) /* Çatallamadan sonra yavru işlem. */
-    {
+    int shm_id;
+    char *shmaddr, *ptr;
+    int next[2];
 
-    } else if (pid < 0) {
-        perror("fork() basarisiz!\n");
-        return -1;
-    } else { /* Çatallamadan sonra ebeveyn işlem. */
-        key_t anahtar = 214127923;
-        const int boyut = 1024;
+    printf("writer started.\n");
 
-        int kimlik;
-        char *adres, *ptr;
-        int sonraki[2];
+    /* Allocate a shared memory segment. */
+    shm_id = shmget(shm_key, shm_size, IPC_CREAT | S_IRUSR | S_IWUSR);
 
-        /* Allocate a shared memory segment */
-        kimlik = shmget(anahtar, boyut, IPC_CREAT | S_IRUSR | S_IWUSR);
+    /* Attach the shared memory segment. */
+    shmaddr = (char *) shmat(shm_id, 0, 0);
 
-        /* Attach the shared memory segment. */
-        adres = (char *) shmat(kimlik, NULL, 0);
+    printf("shared memory attached at address %p\n", shmaddr);
 
-        printf("Shared memory attached at address %p\n", (void *) adres);
+    /* Start to write data. */
+    ptr = shmaddr + sizeof(next);
+    next[0] = sprintf(ptr, "mandy") + 1;
+    ptr += next[0];
+    next[1] = sprintf(ptr, "73453916") + 1;
+    ptr += next[1];
+    sprintf(ptr, "amarica");
+    memcpy(shmaddr, &next, sizeof(next));
+    printf("writer ended.\n");
 
-        /* Start to write data/ */
-        ptr = adres + sizeof(sonraki);
-        sonraki[0] = sprintf(ptr, "Mehmet") + 1;
-        ptr += sonraki[0];
-        sonraki[1] = sprintf(ptr, "123456789") + 1;
-        ptr += sonraki[1];
-        sprintf(ptr, "Ahmet");
-        memcpy(adres, sonraki, sizeof(sonraki));
-        printf("Producer ended.");
+    /*calling the other process*/
+    system("./read");
 
-        /* Calling the other process */
-        system("./read");
+    /* Detach the shared memory segment. */
+    shmdt(shmaddr);
 
-        /* Detach the shared memory segment. */
-        shmdt(adres);
-
-        /* Deallocate the shared memory segment. */
-        shmctl(kimlik, IPC_RMID, 0);
-    }
+    /* Deallocate the shared memory segment.*/
+    shmctl(shm_id, IPC_RMID, 0);
 
     return 0;
 }
