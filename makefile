@@ -1,7 +1,7 @@
 basla: derle calistir
 
 derle:
-	gcc write.c -o "write"
+	gcc -pthread write.c -o "write"
 	gcc read.c -o "read"
 	
 

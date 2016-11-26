@@ -11,31 +11,47 @@
 */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <string.h>
+#include <stdio.h>      /* Standart input-output */
+#include <stdlib.h>     /* for rand() */
+#include <sys/shm.h>    /* Shared Memory */
+#include <sys/stat.h>   /* for shared memory flags */
+#include <time.h>       /* for random(time()) */
+#include <string.h>     /* for memcpy() */
+#include <signal.h>     /* Signal */
+#include <unistd.h>     /* Alarm */
+#include <stdbool.h>    /* Standart bool */
 
 #define BOYUT 10
 #define SHM_SIZE 8*BOYUT
+
+volatile sig_atomic_t kayit_bayragi = false;
+volatile sig_atomic_t cikis = false;
 
 struct kayit {
     int seri_no;
     int veri;
 };
 
+void kayit_ekle(int sig) {
+    kayit_bayragi = true;
+}
+
+void sonlandir(int sig) {
+    cikis = true;
+}
+
 int main(int argc, char **argv) {
     key_t shm_key = 6166525;
 
     int shm_id;
     void *shmaddr;
-    int i;
+    int i = 0;
 
     struct kayit kayitlar[BOYUT];
 
     printf("writer started.\n");
+
+    signal(SIGINT, sonlandir);
 
     /* Allocate a shared memory segment. */
     shm_id = shmget(shm_key, SHM_SIZE, IPC_EXCL | S_IRUSR | S_IWUSR);
@@ -43,16 +59,29 @@ int main(int argc, char **argv) {
     /* Attach the shared memory segment. */
     shmaddr = shmat(shm_id, 0, 0);
 
-    printf("shared memory attached at address %p\n", (void *) shmaddr);
+    printf("shared memory attached at address %p\n", shmaddr);
 
-    /* Start to write data. */
+    /* Alarm yakalayıcısı kurulur. */
+    signal(SIGALRM, kayit_ekle);
+    /* Alarm 1 saniye ile başlatılır. */
+    alarm(1);
+
     srand((unsigned int) time(NULL));
 
-    for (i = 0; i < BOYUT; i++) {
-        kayitlar[i].seri_no = i;
-        kayitlar[i].veri = rand() % 100;
+    /* Start to write data. */
+    int j = 0;
+    while (!cikis) {
+        if (kayit_bayragi) {
+            kayitlar[i].seri_no = i;
+            kayitlar[i].veri = rand() % 100;
+
+            memcpy(shmaddr, &kayitlar, sizeof(kayitlar));
+            i = (i + 1) % 10;
+
+            kayit_bayragi = false;
+            alarm(1);
+        }
     }
-    memcpy(shmaddr, &kayitlar, sizeof(kayitlar));
 
     printf("writer ended.\n");
 
