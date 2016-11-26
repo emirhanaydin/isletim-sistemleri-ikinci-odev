@@ -1,11 +1,12 @@
 basla: derle calistir
 
 derle:
-	gcc read.c -o "read"
 	gcc write.c -o "write"
+	gcc read.c -o "read"
+	
 
 calistir:
-	"./write"
+	"./read"
 
 temizle:
 	rm -f "write"

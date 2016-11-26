@@ -4,7 +4,7 @@ project(isletim_sistemleri_ikinci_odev)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
+        read.c
         write.c)
 
-add_test(isletim_sistemleri_ikinci_odev read.c)
 add_executable(isletim_sistemleri_ikinci_odev ${SOURCE_FILES})

@@ -13,40 +13,48 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <string.h>
 
-int main() {
-    key_t shm_key = 6166529;
-    const int shm_size = 1024;
+#define BOYUT 10
+#define SHM_SIZE 8*BOYUT
+
+struct kayit {
+    int seri_no;
+    int veri;
+};
+
+int main(int argc, char **argv) {
+    key_t shm_key = 6166525;
 
     int shm_id;
-    char *shmaddr, *ptr;
-    int next[2];
+    void *shmaddr;
+    int i;
+
+    struct kayit kayitlar[BOYUT];
 
     printf("writer started.\n");
 
     /* Allocate a shared memory segment. */
-    shm_id = shmget(shm_key, shm_size, IPC_CREAT | S_IRUSR | S_IWUSR);
+    shm_id = shmget(shm_key, SHM_SIZE, IPC_EXCL | S_IRUSR | S_IWUSR);
 
     /* Attach the shared memory segment. */
-    shmaddr = (char *) shmat(shm_id, 0, 0);
+    shmaddr = shmat(shm_id, 0, 0);
 
-    printf("shared memory attached at address %p\n", shmaddr);
+    printf("shared memory attached at address %p\n", (void *) shmaddr);
 
     /* Start to write data. */
-    ptr = shmaddr + sizeof(next);
-    next[0] = sprintf(ptr, "mandy") + 1;
-    ptr += next[0];
-    next[1] = sprintf(ptr, "73453916") + 1;
-    ptr += next[1];
-    sprintf(ptr, "amarica");
-    memcpy(shmaddr, &next, sizeof(next));
-    printf("writer ended.\n");
+    srand((unsigned int) time(NULL));
 
-    /*calling the other process*/
-    system("./read");
+    for (i = 0; i < BOYUT; i++) {
+        kayitlar[i].seri_no = i;
+        kayitlar[i].veri = rand() % 100;
+    }
+    memcpy(shmaddr, &kayitlar, sizeof(kayitlar));
+
+    printf("writer ended.\n");
 
     /* Detach the shared memory segment. */
     shmdt(shmaddr);

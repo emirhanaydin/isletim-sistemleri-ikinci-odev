@@ -1,38 +1,48 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 
+#define BOYUT 10
+#define SHM_SIZE 8*BOYUT
+
+struct kayit {
+    int seri_no;
+    int veri;
+};
+
 int main() {
-    key_t shm_key = 6166529;
-    const int shm_size = 1024;
+    key_t shm_key = 6166525;
 
     int shm_id;
-    char *shmaddr, *ptr;
-    char *shared_memory[3];
-    int *p;
+    void *shmaddr;
+    int i;
+
+    struct kayit *okunan;
+
+    printf("reader started.\n");
 
     /* Allocate a shared memory segment. */
-    shm_id = shmget(shm_key, shm_size, IPC_CREAT | S_IRUSR | S_IWUSR);
+    shm_id = shmget(shm_key, SHM_SIZE, IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
 
     /* Attach the shared memory segment. */
-    shmaddr = (char *) shmat(shm_id, 0, 0);
+    shmaddr = shmat(shm_id, 0, 0);
 
     printf("shared memory attached at address %p\n", shmaddr);
 
+    system("./write");
+
     /* Start to read data. */
-    p = (int *) shmaddr;
-    ptr = shmaddr + sizeof(int) * 2;
-    shared_memory[0] = ptr;
-    ptr += *p++;
-    shared_memory[1] = ptr;
-    ptr += *p;
-    shared_memory[2] = ptr;
-    printf("0=%s\n", shared_memory[0]);
-    printf("1=%s\n", shared_memory[1]);
-    printf("2=%s\n", shared_memory[2]);
+    for (i = 0; i < BOYUT; i++) {
+        okunan = shmaddr + i * (sizeof(struct kayit));
+        printf("%d. veri: %02d\n", okunan->seri_no, okunan->veri);
+    }
 
     /* Detach the shared memory segment. */
     shmdt(shmaddr);
+
+    /* Deallocate the shared memory segment.*/
+    shmctl(shm_id, IPC_RMID, 0);
 
     return 0;
 }
