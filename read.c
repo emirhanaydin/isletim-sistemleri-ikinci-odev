@@ -48,10 +48,13 @@ int main() {
 
         sem_unlink(SEMADI);
 
-        /* Start to read data. */
-        for (i = 0; i < 1; i++) {
+        i = 0;
+        while (1) {
+            /* Start to read data. */
             okunan = shmaddr + i * (sizeof(struct kayit));
+            if (okunan->veri < 0) break;
             printf("%d. veri: %02d\n", okunan->seri_no, okunan->veri);
+            i = (i + 1) % 10;
         }
 
         int ret;
