@@ -11,18 +11,21 @@
 */
 
 
-#include <stdio.h>      /* Standart input-output */
-#include <stdlib.h>     /* for rand() */
-#include <sys/shm.h>    /* Shared Memory */
-#include <sys/stat.h>   /* for shared memory flags */
-#include <time.h>       /* for random(time()) */
-#include <string.h>     /* for memcpy() */
-#include <signal.h>     /* Signal */
-#include <unistd.h>     /* Alarm */
-#include <stdbool.h>    /* Standart bool */
+#include <stdio.h>              /* Standart input-output */
+#include <stdlib.h>             /* for rand() */
+#include <sys/shm.h>            /* Shared Memory */
+#include <sys/stat.h>           /* for shared memory flags */
+#include <time.h>               /* for random(time()) */
+#include <string.h>             /* for memcpy() */
+#include <signal.h>             /* Signal */
+#include <unistd.h>             /* Alarm */
+#include <stdbool.h>            /* Standart bool */
+#include <semaphore.h>          /* Semaphore */
+#include <fcntl.h>              /* O_CREAT */
 
 #define BOYUT 10
 #define SHM_SIZE 8*BOYUT
+#define SEMADI "/senkronizesem"
 
 volatile sig_atomic_t kayit_bayragi = false;
 volatile sig_atomic_t cikis = false;
@@ -41,7 +44,7 @@ void sonlandir(int sig) {
 }
 
 int main(int argc, char **argv) {
-    key_t shm_key = 6166525;
+    key_t shm_key = atoi(argv[0]);
 
     int shm_id;
     void *shmaddr;
@@ -61,6 +64,9 @@ int main(int argc, char **argv) {
 
     printf("shared memory attached at address %p\n", shmaddr);
 
+    /* 0 başlangıç değeri ile semafor oluşturulur. */
+    sem_t *mutex = sem_open(SEMADI, O_CREAT, 0644, 0);
+
     /* Alarm yakalayıcısı kurulur. */
     signal(SIGALRM, kayit_ekle);
     /* Alarm 1 saniye ile başlatılır. */
@@ -69,9 +75,9 @@ int main(int argc, char **argv) {
     srand((unsigned int) time(NULL));
 
     /* Start to write data. */
-    int j = 0;
     while (!cikis) {
         if (kayit_bayragi) {
+            printf("Yeni kayit eklendi.\n");
             kayitlar[i].seri_no = i;
             kayitlar[i].veri = rand() % 100;
 
@@ -84,6 +90,8 @@ int main(int argc, char **argv) {
     }
 
     printf("writer ended.\n");
+
+    sem_destroy(mutex);
 
     /* Detach the shared memory segment. */
     shmdt(shmaddr);
