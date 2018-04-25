@@ -1,12 +1,12 @@
 basla: derle calistir
 
 derle:
-	gcc -pthread write.c -o "write"
-	gcc -pthread read.c -o "read"
+	gcc -pthread uretici.c -o "uretici"
+	gcc -pthread tuketici.c -o "tuketici"
 	
 calistir:
-	"./read"
+	"./tuketici"
 
 temizle:
-	rm -f "write"
-	rm -f "read"
+	rm -f "uretici"
+	rm -f "tuketici"
